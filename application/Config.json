@@ -1,0 +1,9 @@
+{
+    
+    "driver":"mysql",
+    "dbname":"agencia_viatges",
+    "dbhost":"localhost",
+    "dbuser":"agencia",
+    "dbpass":"agencia1234",
+    "THEME":"modern-business"
+}
