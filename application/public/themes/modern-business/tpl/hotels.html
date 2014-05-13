@@ -1,0 +1,137 @@
+    <div class="container">
+
+        <div class="row">
+
+            <div class="col-lg-12">
+                <h1 class="page-header">Hotels
+                    <small>Els millors hotels, al millor preu</small>
+                </h1>
+                <ol class="breadcrumb">
+                    <li><a href="{APP_W}/">Inici</a>
+                    </li>
+                    <li class="active">Hotels</li>
+                </ol>
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-lg-12">
+                
+                <!--<hr>
+                <img src="{APP_W}/application/public/themes/{THEME}/img/hotel.jpg" class="img-responsive">-->
+                <hr>
+
+                <!-- the comment box -->
+                <div class="well">
+                    <h4>Busca el teu hotel:</h4>
+                    <form role="form">
+                        <div class="form-group">
+                            <input type="text" name="poblacio" class="form-control" style="display: inline-block; width: auto;" placeholder="Població" />&nbsp;
+                            <input type="number" name="places" class="form-control" style="display: inline-block; width: 90px;" min="1" max="7" value="1" placeholder="Places" />&nbsp;
+                            <br /><br />
+                            <label>Categoría:</label>&nbsp;
+                            <input type="radio" name="categoria" value="1" style="margin-left: 10px;" /> 1
+                            <input type="radio" name="categoria" value="2" style="margin-left: 10px;" /> 2
+                            <input type="radio" name="categoria" value="3" style="margin-left: 10px;" /> 3
+                            <input type="radio" name="categoria" value="4" style="margin-left: 10px;" /> 4
+                            <input type="radio" name="categoria" value="5" style="margin-left: 10px;" /> 5
+                            <input type="radio" name="categoria" value="0" checked style="margin-left: 10px;" /> Qualsevol
+                        </div>
+                        <button type="submit" id="submit-hotel" class="btn btn-primary">Buscar</button>
+                    </form>
+                </div>
+                <hr>
+                <div id="resultat">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="text/javascript">
+        var tipus, valor, consulta = null;
+        $("#submit-hotel").click(function (event) {
+            event.preventDefault();
+            tipus = 'hotel';
+            poblacio = $("input[name=poblacio]").val();
+            categoria = $("input[name=categoria]:checked").val();
+            places = $("input[name=places]").val();
+            places = (places < 1 || places > 7 ? 1 : places);
+            consulta = $.ajax({
+                type: "POST",
+                url: "{APP_W}/Ajax/buscar",
+                data: {tipus: tipus, poblacio: poblacio, categoria: categoria, places: places},
+                beforeSend: function() {
+                    if(consulta != null)
+                        consulta.abort();
+                    $("#resultat").html("Cargando...");
+                },
+                success: function(msg) {
+                    $("#resultat").html(msg);
+                }
+            });
+        });
+        $(document).on('click', '.mostrar-ocultar', function() {
+            if($(this).parent().children(".maxi").css("display") == "none")
+                $(this).text("Ocultar");
+            else
+                $(this).text("Más información");
+            var latLong = $("input[name=" + $(this).parent().children(".maxi").children(".hotel_mapa").attr("id") + "]").val();
+            latLong = latLong.split(",");
+            var latitud = latLong[0];
+            var longitud = latLong[1];
+            $(this).parent().children(".maxi").slideToggle("normal", function () {
+                $(this).parent().children(".maxi").children(".hotel_mapa").gmap3({map:{options:{center:[latitud,longitud],zoom:15}},marker:{latLng:[latitud,longitud]}});
+            });
+        });
+        
+        $(document).on('click', '.reservar', function() {
+            $(this).css("padding", "10px 20px");
+            $(this).css("line-height", "20px");
+            var hotel = $(this).attr("id").split("_");
+            hotel = hotel[1];
+            var elemento = $(this);
+            var nPlaces = $("input[name=" + $(this).parent().parent().parent().children(".maxi").children(".hotel_mapa").attr("id") + "]").val();
+            nPlaces = nPlaces.split(",")[2];
+            $.ajax({
+                type: "POST",
+                url: "{APP_W}/Ajax/reservar",
+                data: {tipus: 'hotel', id: hotel, places: nPlaces},
+                beforeSend: function() {
+                    elemento.text("Reservant...");
+                },
+                success: function(msg) {
+                    var json = JSON.parse(msg);
+                    if(json.error != null) {
+                        elemento.text("Reservar");
+                        if(json.error == "23000")
+                            alert("Ja tens aquest mateix servei a la teva reserva");
+                        else
+                            alert(json.error);
+                    } else
+                    elemento.text("Reservat!").attr("disabled", "disabled");
+                }
+            });
+        });
+        
+        $(document).on('mouseenter', '.reservar', function() {
+            var nPlaces = $("input[name=" + $(this).parent().parent().parent().children(".maxi").children(".hotel_mapa").attr("id") + "]").val();
+            nPlaces = nPlaces.split(",")[2];
+            var text = (nPlaces > 1 ? 'places' : 'plaça');
+            if($(this).text() == 'Reservar') {
+                $(this).css("padding", "5px 20px");
+                $(this).css("line-height", "14px");
+                $(this).append("<br><span style='font-size: 10px;'>" + nPlaces + " " + text + "</span>");
+            }
+        });
+        
+        $(document).on('mouseleave', '.reservar', function() {
+            if($(this).text() != 'Reservant...' && $(this).text() != 'Reservat!') {
+                $(this).css("padding", "10px 20px");
+                $(this).css("line-height", "20px");
+                $(this).html("Reservar");
+            }
+        });
+    </script>

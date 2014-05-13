@@ -1,0 +1,156 @@
+   <div class="container">    
+    <?php
+    if(Session::get('islogged') == TRUE) { ?>
+        <div class="row">
+            <div class="col-md-3 col-sm-4 sidebar">
+                <ul class="nav nav-stacked nav-pills">
+                    <li itemref="perfil" class="active"><a href="#">Perfil d'usuari</a>
+                    </li>
+                    <li itemref="reserves"><a href="#">Reserves</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="col-md-9 col-sm-8">
+                <h1 class="page-header">Usuari
+                    <small>&gt; Canviar dades personals</small>
+                </h1>
+                <div id="resultat">
+                    <form role="form">
+                        <div class="form-group">
+                            <input type="text" name="nomE" class="form-control" style="display: inline-block; width: auto;" placeholder="Nom" />&nbsp;
+                            <input type="text" name="cognomsE" class="form-control" style="display: inline-block; width: auto;" placeholder="Cognoms" />&nbsp;
+                            <br><br>
+                            <h5>Número VISA:</h5>
+                            <input type="text" name="visaE" class="form-control" style="display: inline-block; width: auto;" maxlength="16" placeholder="Número VISA" />&nbsp;
+                            <button id="submit-dades" class="btn btn-primary">Actualitzar dades</button>
+                        </div>
+                    </form>
+                    <br><br>
+                    <h4>Canviar contrasenya</h4>
+                    <form role="form">
+                        <div class="form-group">
+                            <input type="password" name="contrasenya" class="form-control" style="display: inline-block; width: auto;" placeholder="Contrasenya nova" />&nbsp;
+                            <button id="submit-contrasenya" class="btn btn-primary">Canviar contrasenya</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+        <!-- /.row -->
+        <script type="text/javascript">
+            $(document).on('click', '.mostrar-ocultar', function() {
+                if($(this).parent().children(".maxi").css("display") == "none")
+                    $(this).text("Ocultar");
+                else
+                    $(this).text("Más información");
+                $(this).parent().children(".maxi").slideToggle("normal");
+            });
+
+            $(document).on('click', '.nav-pills li', function() {
+               $(".nav-pills li.active").removeClass("active");
+                $(this).addClass("active");
+               if($(this).attr("itemref") == 'reserves') {
+                    $.ajax({
+                        type: "POST",
+                        url: "{APP_W}/Ajax/reserves",
+                        beforeSend: function() {
+                            $("#resultat").html("<span class='estats carregant'>Carregant reserves, esperi sisplau.</span>");
+                        },
+                        success: function(msg) {
+                            $("h1.page-header small").html("&gt; Reserves");
+                            $("#resultat").html(msg);
+                        }
+                    });
+               }
+               else if($(this).attr("itemref") == 'perfil') {
+                    $("#resultat").html('<form role="form">' +
+                        '<div class="form-group">' +
+                            '<input type="text" name="nomE" class="form-control" style="display: inline-block; width: auto;" placeholder="Nom" />&nbsp;' +
+                            '<input type="text" name="cognomsE" class="form-control" style="display: inline-block; width: auto;" placeholder="Cognoms" />&nbsp;' +
+                            '<br><br>' +
+                            '<h5>Número VISA:</h5><input type="text" name="visaE" class="form-control" style="display: inline-block; width: auto;" maxlength="16" placeholder="Número VISA" />&nbsp;' +
+                            '<button id="submit-dades" class="btn btn-primary">Actualitzar dades</button>' +
+                        '</div>' +
+                    '</form>' +
+                    '<br><br>' +
+                    '<h4>Canviar contrasenya</h4>' +
+                    '<form role="form">' +
+                        '<div class="form-group">' +
+                            '<input type="password" name="contrasenya" class="form-control" style="display: inline-block; width: auto;" placeholder="Contrasenya nova" />&nbsp;' +
+                            '<button id="submit-contrasenya" class="btn btn-primary">Canviar contrasenya</button>' +
+                        '</div>' +
+                    '</form>');
+                    $("h1.page-header small").html("&gt; Canviar dades personals");
+               }
+            });
+            var contra;
+            
+            $(document).on('click', '#submit-dades', function(event) {
+                event.preventDefault();
+                nom = $("input[name=nomE]").val();
+                cognoms = $("input[name=cognomsE]").val();
+                visa = $("input[name=visaE]").val();
+                $.ajax({
+                        type: "POST",
+                        url: "{APP_W}/Ajax/canviarDades",
+                        data: {nom: nom, cognoms: cognoms, visa: visa},
+                        success: function(msg) {
+                            alert(msg);
+                        }
+                    });
+            });
+            
+            $(document).on('click', '#submit-contrasenya', function(event) {
+                event.preventDefault();
+                contra = $("input[name=contrasenya]");
+                $.ajax({
+                        type: "POST",
+                        url: "{APP_W}/Ajax/canviarContrasenya",
+                        data: {password: contra.val()},
+                        success: function(msg) {
+                            alert(msg);
+                            contra.val("");
+                        }
+                    });
+            });
+            
+            $(document).on("click", "button.pagar", function (event) {
+                event.preventDefault();
+                elem = $(this).attr("id");
+                elems = elem.split("_");
+                id = elems[1];
+                preu = elems[2];
+                $.ajax({
+                    type: "POST",
+                    url: "{APP_W}/Ajax/pagarReserva",
+                    data: {reserva: id, preu: preu},
+                    success: function(msg) {
+                        if(msg == "ok") {
+                            alert("La reserva s'ha pagat correctament.");
+                            $.ajax({
+                                type: "POST",
+                                url: "{APP_W}/Ajax/reserves",
+                                beforeSend: function() {
+                                    $("#resultat").html("<span class='estats carregant'>Carregant reserves, esperi sisplau.</span>");
+                                },
+                                success: function(msg) {
+                                    $("h1.page-header small").html("&gt; Reserves");
+                                    $("#resultat").html(msg);
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+        </script>
+    <?php } else { ?>
+        <div class="col-md-9 col-sm-8">
+            <h1 class="page-header">Usuari
+                <small>&gt; No validat</small>
+            </h1>
+            <h3>No pots accedir aquí, has d'iniciar sessió primerament.</h3>
+        </div>
+    <?php } ?>
+    </div>
